@@ -184,7 +184,7 @@ func writeHTMLfile(layer string, htmlBuffer *bytes.Buffer) {
 	}
 }
 
-const htmlStart = "<!-- MapServer FeatureInfo Template --><html><head><title>GetFeatureInfo output</title></head><style type=\"text/css\">table.featureInfo, table.featureInfo td, table.featureInfo th { border: 1px solid #ddd; border-collapse: collapse; margin: 0; padding: 0; font-size: 90%; padding: .2em .1em; } table.featureInfo th { padding: .2em .2em; font-weight: bold; background: #eee; } table.featureInfo td { background: #fff; } table.featureInfo tr.odd td { background: #eee; } table.featureInfo caption { text-align: left; font-size: 100%; font-weight: bold; padding: .2em .2em; }</style><body><table class=\"featureInfo\">"
+const htmlStart = "<!-- MapServer Template --><html><head><title>GetFeatureInfo output</title></head><style type=\"text/css\">table.featureInfo, table.featureInfo td, table.featureInfo th { border: 1px solid #ddd; border-collapse: collapse; margin: 0; padding: 0; font-size: 90%; padding: .2em .1em; } table.featureInfo th { padding: .2em .2em; font-weight: bold; background: #eee; } table.featureInfo td { background: #fff; } table.featureInfo tr.odd td { background: #eee; } table.featureInfo caption { text-align: left; font-size: 100%; font-weight: bold; padding: .2em .2em; }</style><body><table class=\"featureInfo\">"
 const htmlLayer = "<caption class=\"featureInfo\">{{.layer}}</caption><tr>"
 const htmlColumnHead = "<th>{{.column}}</th>"
 const htmlColumnRow = "<td>[{{.column}}]</td>"
