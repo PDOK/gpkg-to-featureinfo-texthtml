@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -133,7 +134,7 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 		log.Fatal(err)
 	}
 	for _, column := range columns {
-		if column != "geom" {
+		if checkColumn(column) {
 			columnHeadReplace := map[string]interface{}{
 				"column": template.HTML(column),
 			}
@@ -161,6 +162,17 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 	}
 	buf.WriteString(htmlEnd)
 	return buf
+}
+
+// Check if column name should be included in HTML template
+func checkColumn(columnName string) bool {
+	badColumns := []string{"geom", "shape_len", "shape_leng", "shape_area"}
+	for _, badColumn := range badColumns {
+		if strings.EqualFold(badColumn, columnName) {
+			return false
+		}
+	}
+	return true
 }
 
 // Write HTML to file

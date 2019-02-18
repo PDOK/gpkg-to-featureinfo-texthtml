@@ -40,3 +40,12 @@ func Test_generateHTMLForLayer(t *testing.T) {
 		t.Errorf("Result was not OK.\nResult:\n%s.\nExpected:\n%s.", htmlBuffer.String(), expectedResult)
 	}
 }
+
+func Test_checkColumn(t *testing.T) {
+	badColumns := []string{"geom", "shape_len", "shape_leng", "shape_area", "Shape_Area"}
+	for _, badColumn := range badColumns {
+		if checkColumn(badColumn) {
+			t.Errorf("%s should not be an valid column name.", badColumn)
+		}
+	}
+}
