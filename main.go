@@ -150,7 +150,7 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 		log.Fatal(err)
 	}
 	for _, column := range columns {
-		if column != "geom" {
+		if checkColumn(column) {
 			columnRowReplace := map[string]interface{}{
 				"column": template.HTML(column),
 			}
