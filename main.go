@@ -27,10 +27,11 @@ func main() {
 	log.Println("Geopackage downloaded")
 	geopackage := openGeopackage(gpkgFile)
 	defer geopackage.Close()
+	geomColumns := getGeometryColumnsFromGeopackage(geopackage)
 	layers := getLayersFromGeopackage(geopackage)
 	for _, layer := range layers {
 		columns := getPropertiesFromLayer(layer, geopackage)
-		htmlBuffer := generateHTMLForLayer(layer, columns)
+		htmlBuffer := generateHTMLForLayer(layer, columns, geomColumns)
 		writeHTMLfile(layer, htmlBuffer)
 	}
 }
@@ -113,8 +114,28 @@ func getPropertiesFromLayer(layer string, geopackage *sql.DB) []string {
 	return columns
 }
 
+// Read layers from Geopackage
+func getGeometryColumnsFromGeopackage(geopackage *sql.DB) []string {
+	log.Println("Searching for Geometry Columns in Geopackage")
+	rows, errDb := geopackage.Query("SELECT DISTINCT column_name FROM gpkg_geometry_columns")
+	if errDb != nil {
+		log.Fatal("Error with querying Geopackage", errDb)
+	}
+	var columns []string
+	var column string
+	for rows.Next() {
+		rows.Scan(&column)
+		log.Println("Geometry column found: " + column)
+		columns = append(columns, column)
+	}
+	if columns == nil {
+		log.Fatal("No geometry columns found!")
+	}
+	return columns
+}
+
 // Generate HTML for layer
-func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
+func generateHTMLForLayer(layer string, columns []string, geomColumns []string) *bytes.Buffer {
 	buf := new(bytes.Buffer)
 	buf.WriteString(htmlStart)
 	log.Print("Generate HTML for layer: " + layer)
@@ -134,7 +155,7 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 		log.Fatal(err)
 	}
 	for _, column := range columns {
-		if checkColumn(column) {
+		if checkColumn(column, geomColumns) {
 			columnHeadReplace := map[string]interface{}{
 				"column": template.HTML(column),
 			}
@@ -150,7 +171,7 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 		log.Fatal(err)
 	}
 	for _, column := range columns {
-		if checkColumn(column) {
+		if checkColumn(column, geomColumns) {
 			columnRowReplace := map[string]interface{}{
 				"column": template.HTML(column),
 			}
@@ -165,8 +186,9 @@ func generateHTMLForLayer(layer string, columns []string) *bytes.Buffer {
 }
 
 // Check if column name should be included in HTML template
-func checkColumn(columnName string) bool {
+func checkColumn(columnName string, geomColumns []string) bool {
 	badColumns := []string{"geom", "shape_len", "shape_leng", "shape_area"}
+	badColumns = append(badColumns, geomColumns...)
 	for _, badColumn := range badColumns {
 		if strings.EqualFold(badColumn, columnName) {
 			return false
