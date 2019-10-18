@@ -16,15 +16,26 @@ import (
 )
 
 func main() {
-	gpkgURLParam := flag.String("gpkgurl", "", "URL pointing to a geopackage (https://example.com/geopackage.gpkg).")
-	checkParameters(gpkgURLParam)
+	gpkgURLParam := flag.String("gpkg-url", "", "URL pointing to a geopackage (https://example.com/geopackage.gpkg)")
+	gpkgPathParam := flag.String("gpkg-path", "", "Path pointing to a geopackage (./geopackage.gpkg)")
 
-	gpkgFile := createTmpFile()
-	defer os.Remove(gpkgFile.Name())
-	if errDownloadGeopackage := downloadGeopackage(gpkgFile, *gpkgURLParam); errDownloadGeopackage != nil {
-		log.Fatal(errDownloadGeopackage)
+	checkParameters(gpkgURLParam, gpkgPathParam)
+
+	var gpkgFile *os.File
+	if *gpkgURLParam != "" {
+		gpkgFile = createTmpFile()
+		defer os.Remove(gpkgFile.Name())
+		if errDownloadGeopackage := downloadGeopackage(gpkgFile, *gpkgURLParam); errDownloadGeopackage != nil {
+			log.Fatal(errDownloadGeopackage)
+		}
+	} else {
+		var err error
+		gpkgFile, err = os.Open(*gpkgPathParam)
+		if err != nil {
+			log.Fatal("Error opening file", gpkgPathParam)
+		}
 	}
-	log.Println("Geopackage downloaded")
+
 	geopackage := openGeopackage(gpkgFile)
 	defer geopackage.Close()
 	geomColumns := getGeometryColumnsFromGeopackage(geopackage)
@@ -37,12 +48,13 @@ func main() {
 }
 
 // Check if parameters are provided
-func checkParameters(gpkgURLParam *string) {
+func checkParameters(gpkgURLParam *string, gpkgPathParam *string) {
 	flag.Parse()
-	if *gpkgURLParam == "" {
-		log.Fatal("gpkgUrl is required. Run with -h for help.")
+	if *gpkgURLParam == "" && *gpkgPathParam == "" {
+		log.Fatal("gpkgUrl or gpkgPath is required. Run with -h for help.")
+	} else if *gpkgURLParam != "" && *gpkgPathParam != "" {
+		log.Fatal("either gpkgUrl or gpkgPath is required. Run with -h for help.")
 	}
-	log.Printf("Starting download for: %s", *gpkgURLParam)
 }
 
 // Create a temporary file
@@ -57,6 +69,7 @@ func createTmpFile() *os.File {
 
 // Download a Geopackage and store it in a file
 func downloadGeopackage(gpkgFile *os.File, url string) error {
+	log.Printf("Starting download for: %s", url)
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
@@ -64,6 +77,7 @@ func downloadGeopackage(gpkgFile *os.File, url string) error {
 	defer resp.Body.Close()
 	defer gpkgFile.Close()
 	_, err = io.Copy(gpkgFile, resp.Body)
+	log.Println("Geopackage downloaded")
 	return err
 }
 
