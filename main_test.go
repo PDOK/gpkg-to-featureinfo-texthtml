@@ -5,10 +5,18 @@ import (
 )
 
 func Test_checkParameters(t *testing.T) {
-	var testArg *string
+	var testArgUrl *string
 	temp := "-gpkgurl http://csu338.cs.kadaster.nl:8080/geopackages/afvalwater2016/1/afvalwater.gpkg"
-	testArg = &temp
-	checkParameters(testArg)
+	testArgUrl = &temp
+	var testArgPath *string
+	temp2 := ""
+	testArgPath = &temp2
+	checkParameters(testArgUrl, testArgPath)
+	temp = ""
+	temp2 = "-gpkgpath ./test.gpkg"
+	testArgUrl = &temp
+	testArgPath = &temp2
+	checkParameters(testArgUrl, testArgPath)
 }
 
 func Test_createTmpFile(t *testing.T) {
