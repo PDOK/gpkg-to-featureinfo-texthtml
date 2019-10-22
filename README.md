@@ -1,4 +1,5 @@
 # gpkg-to-featureinfo-texthtml
+<img src="gpkg-logo.PNG" alt="gpkg-to-featureinfo-texthtml logo" width="400px" title="logo"/>
 Generate HTML feature-info templates for Mapserver from GPKG
 
 ## Build
