@@ -34,4 +34,4 @@ Example with an URL:
 `gpkg-to-featureinfo-texthtml.exe -gpkg-url http://csu338.cs.kadaster.nl:8080/geopackages/afvalwater2016/1/afvalwater.gpkg`
 
 Example with a local file:
-`gpkg-to-featureinfo-texthtml.exe -gpkg-path /home/user/downloads/afvalwater.gpkg`
+`gpkg-to-featureinfo-texthtml.exe -gpkg-path C:\bestanden\afvalwater.gpkg`
