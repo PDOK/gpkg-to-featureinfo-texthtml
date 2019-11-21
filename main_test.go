@@ -6,7 +6,7 @@ import (
 
 func Test_checkParameters(t *testing.T) {
 	var testArgUrl *string
-	temp := "-gpkgurl http://csu338.cs.kadaster.nl:8080/geopackages/afvalwater2016/1/afvalwater.gpkg"
+	temp := "-gpkgurl https://pdokbrtfaststorage.blob.core.windows.net/testdata/afvalwater.gpkg"
 	testArgUrl = &temp
 	var testArgPath *string
 	temp2 := ""
@@ -31,7 +31,7 @@ func Test_downloadGeopackage(t *testing.T) {
 	if testFile == nil {
 		t.Error("Could not create temporary file.")
 	}
-	err := downloadGeopackage(testFile, "http://csu338.cs.kadaster.nl:8080/geopackages/afvalwater2016/1/afvalwater.gpkg")
+	err := downloadGeopackage(testFile, "https://pdokbrtfaststorage.blob.core.windows.net/testdata/afvalwater.gpkg")
 	if err != nil {
 		t.Error(err)
 	}
