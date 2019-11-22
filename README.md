@@ -2,7 +2,7 @@
 
 ![GitHub license](https://img.shields.io/github/license/PDOK/gpkg-to-featureinfo-texthtml.svg)
 ![GitHub release](https://img.shields.io/github/release/PDOK/gpkg-to-featureinfo-texthtml.svg)
-![Go report](https://goreportcard.com/badge/github.com/pdok/gpkg-to-featureinfo-texthtml.svg)
+![Go report](https://goreportcard.com/badge/github.com/pdok/gpkg-to-featureinfo-texthtml)
 
 <img src="gpkg-logo.PNG" alt="gpkg-to-featureinfo-texthtml logo" width="400px" title="logo"/>
 Generate HTML feature-info templates for Mapserver from GPKG
