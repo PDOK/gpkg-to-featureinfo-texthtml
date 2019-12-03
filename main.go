@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"flag"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -59,6 +60,7 @@ func checkParameters(gpkgURLParam *string, gpkgPathParam *string) {
 
 // Create a temporary file
 func createTmpFile() *os.File {
+	os.Mkdir("/tmp", 0777)
 	tmpFile, errTmpFile := ioutil.TempFile(os.TempDir(), "gpkg-")
 	if errTmpFile != nil {
 		log.Fatal("Cannot create temporary file", errTmpFile)
@@ -73,6 +75,9 @@ func downloadGeopackage(gpkgFile *os.File, url string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("didn't get a 200 statuscode, instead got %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	defer gpkgFile.Close()
@@ -213,10 +218,11 @@ func checkColumn(columnName string, geomColumns []string) bool {
 
 // Write HTML to file
 func writeHTMLfile(layer string, htmlBuffer *bytes.Buffer) {
-	fileName := layer + ".html"
+	os.Mkdir("output", 0777)
+	fileName := "output/" + layer + ".html"
 	errFile := ioutil.WriteFile(fileName, htmlBuffer.Bytes(), 0777)
 	if errFile != nil {
-		log.Fatal("Cannot create temporary file", errFile)
+		log.Fatal("Cannot create html file", errFile)
 	}
 }
 
