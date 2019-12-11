@@ -17,6 +17,7 @@ To test the application, make sure you have GoLang (v1.11+) installed.
 
 ## Usage with sources
 You can use either an URL where a Geopackage can be downloaded or use a local Geopackage.
+The HTML files will be stored in a 'output' folder.
 
 Example with an URL:  
 `go run main.go -gpkg-url https://domain.nl/geopackages/dataset/1/dataset.gpkg`
@@ -46,3 +47,5 @@ Example with a local file:
 First you need to build the Docker image. This can be acchieved by running:
 `docker build -t pdok/gpkg-to-featureinfo-texthtml:0.1 .`
 
+You could use this container by running:
+`docker run -v /tmp/output:/ouput -t pdok/gpkg-to-featureinfo-texthtml:0.1 gpkg-to-featureinfo-texthtml -gpkg-url https://domain.nl/geopackages/dataset/1/dataset.gpkg`
