@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"time"
 )
 
 func Test_checkParameters(t *testing.T) {
@@ -31,10 +32,7 @@ func Test_downloadGeopackage(t *testing.T) {
 	if testFile == nil {
 		t.Error("Could not create temporary file.")
 	}
-	err := downloadGeopackage(testFile, "https://pdokbrtfaststorage.blob.core.windows.net/testdata/afvalwater.gpkg")
-	if err != nil {
-		t.Error(err)
-	}
+	downloadGeopackage(testFile, "https://pdokbrtfaststorage.blob.core.windows.net/testdata/afvalwater.gpkg")
 }
 
 func Test_generateHTMLForLayer(t *testing.T) {
@@ -58,4 +56,8 @@ func Test_checkColumn(t *testing.T) {
 			t.Errorf("%s should not be an valid column name.", badColumn)
 		}
 	}
+}
+
+func Test_programFinishedSuccesfully(t *testing.T) {
+	programFinishedSuccesfully(time.Now())
 }

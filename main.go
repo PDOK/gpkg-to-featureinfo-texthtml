@@ -10,33 +10,21 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
+	startTime := time.Now()
 	gpkgURLParam := flag.String("gpkg-url", "", "URL pointing to a geopackage (https://example.com/geopackage.gpkg)")
 	gpkgPathParam := flag.String("gpkg-path", "", "Path pointing to a geopackage (./geopackage.gpkg)")
-
 	checkParameters(gpkgURLParam, gpkgPathParam)
-
-	var gpkgFile *os.File
-	if *gpkgURLParam != "" {
-		gpkgFile = createTmpFile()
-		defer os.Remove(gpkgFile.Name())
-		if errDownloadGeopackage := downloadGeopackage(gpkgFile, *gpkgURLParam); errDownloadGeopackage != nil {
-			log.Fatal(errDownloadGeopackage)
-		}
-	} else {
-		var err error
-		gpkgFile, err = os.Open(*gpkgPathParam)
-		if err != nil {
-			log.Fatal("Error opening file", gpkgPathParam)
-		}
-	}
-
+	gpkgFile := getGpkgFile(gpkgURLParam, gpkgPathParam)
 	geopackage := openGeopackage(gpkgFile)
+	defer gpkgFile.Close()
 	defer geopackage.Close()
 	geomColumns := getGeometryColumnsFromGeopackage(geopackage)
 	layers := getLayersFromGeopackage(geopackage)
@@ -45,40 +33,65 @@ func main() {
 		htmlBuffer := generateHTMLForLayer(layer, columns, geomColumns)
 		writeHTMLfile(layer, htmlBuffer)
 	}
+	cleanup(gpkgFile, gpkgURLParam)
+	programFinishedSuccesfully(startTime)
 }
 
 // Check if parameters are provided
 func checkParameters(gpkgURLParam *string, gpkgPathParam *string) {
 	flag.Parse()
 	if *gpkgURLParam == "" && *gpkgPathParam == "" {
-		log.Fatal("gpkgUrl or gpkgPath is required. Run with -h for help.")
+		log.Fatal("Error: gpkg-url or gpkg-path is required. Run with -h for help.")
 	} else if *gpkgURLParam != "" && *gpkgPathParam != "" {
-		log.Fatal("either gpkgUrl or gpkgPath is required. Run with -h for help.")
+		log.Fatal("Error: either gpkg-url or gpkg-path is required. Run with -h for help.")
 	}
 }
 
 // Create a temporary file
 func createTmpFile() *os.File {
+	if _, err := os.Stat("/tmp"); os.IsNotExist(err) {
+		os.Mkdir("/tmp", 0777)
+	}
 	tmpFile, errTmpFile := ioutil.TempFile(os.TempDir(), "gpkg-")
 	if errTmpFile != nil {
 		log.Fatal("Cannot create temporary file", errTmpFile)
 	}
-	log.Println("Created File: " + tmpFile.Name())
+	log.Println("Created temporary file: " + tmpFile.Name())
 	return tmpFile
 }
 
+// Get the Geopackage as a file
+func getGpkgFile(gpkgURLParam *string, gpkgPathParam *string) *os.File {
+	var gpkgFile *os.File
+	if *gpkgURLParam != "" {
+		gpkgFile = createTmpFile()
+		downloadGeopackage(gpkgFile, *gpkgURLParam)
+	} else {
+		var err error
+		gpkgFile, err = os.Open(*gpkgPathParam)
+		if err != nil {
+			log.Fatal("Error opening file: ", gpkgPathParam)
+		}
+	}
+	return gpkgFile
+}
+
 // Download a Geopackage and store it in a file
-func downloadGeopackage(gpkgFile *os.File, url string) error {
+func downloadGeopackage(gpkgFile *os.File, url string) {
 	log.Printf("Starting download for: %s", url)
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		log.Fatal(err)
+	}
+	if resp.StatusCode != 200 {
+		log.Fatalf("Download failed: didn't get a 200 statuscode, instead got %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
-	defer gpkgFile.Close()
 	_, err = io.Copy(gpkgFile, resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Println("Geopackage downloaded")
-	return err
 }
 
 // Open Geopackage DB
@@ -96,7 +109,7 @@ func getLayersFromGeopackage(geopackage *sql.DB) []string {
 	log.Println("Searching for layers in Geopackage")
 	rows, errDb := geopackage.Query("SELECT table_name from gpkg_contents")
 	if errDb != nil {
-		log.Fatal("Error with querying Geopackage", errDb)
+		log.Fatal("Error with querying Geopackage: ", errDb)
 	}
 	var layers []string
 	var layer string
@@ -116,11 +129,11 @@ func getPropertiesFromLayer(layer string, geopackage *sql.DB) []string {
 	log.Println("Searching for columns for layer '" + layer + "' in Geopackage")
 	statement, errDb := geopackage.Query("SELECT * FROM " + layer)
 	if errDb != nil {
-		log.Fatal("Error with querying Geopackage", errDb)
+		log.Fatal("Error with querying Geopackage: ", errDb)
 	}
 	columns, errDb := statement.Columns()
 	if errDb != nil {
-		log.Fatal("Error with querying Geopackage", errDb)
+		log.Fatal("Error with querying Geopackage: ", errDb)
 	}
 	for _, column := range columns {
 		log.Print("Column found: " + column)
@@ -133,7 +146,7 @@ func getGeometryColumnsFromGeopackage(geopackage *sql.DB) []string {
 	log.Println("Searching for Geometry Columns in Geopackage")
 	rows, errDb := geopackage.Query("SELECT DISTINCT column_name FROM gpkg_geometry_columns")
 	if errDb != nil {
-		log.Fatal("Error with querying Geopackage", errDb)
+		log.Fatal("Error with querying Geopackage: ", errDb)
 	}
 	var columns []string
 	var column string
@@ -213,11 +226,33 @@ func checkColumn(columnName string, geomColumns []string) bool {
 
 // Write HTML to file
 func writeHTMLfile(layer string, htmlBuffer *bytes.Buffer) {
-	fileName := layer + ".html"
+	if _, err := os.Stat("output"); os.IsNotExist(err) {
+		os.Mkdir("output", 0777)
+	}
+	fileName := "output/" + layer + ".html"
 	errFile := ioutil.WriteFile(fileName, htmlBuffer.Bytes(), 0777)
 	if errFile != nil {
-		log.Fatal("Cannot create temporary file", errFile)
+		log.Fatal("Cannot create html file", errFile)
 	}
+}
+
+// Remove created temporary file
+func cleanup(gpkgFile *os.File, gpkgURLParam *string) {
+	if *gpkgURLParam != "" {
+		tempFileName := gpkgFile.Name()
+		err := os.Remove(tempFileName)
+		if err != nil {
+			log.Print("Could not cleanup temp file: ", err)
+		} else {
+			log.Print("Deleted temporary file: ", tempFileName)
+		}
+	}
+}
+
+// Program finished with succes, log time and exit
+func programFinishedSuccesfully(startTime time.Time) {
+	log.Println("Finished in (" + strconv.FormatFloat(time.Now().Sub(startTime).Seconds(), 'f', 2, 64) + "s).")
+	os.Exit(0)
 }
 
 const htmlStart = "<!-- MapServer Template -->\n<html>\n\t<head>\n\t\t<title>GetFeatureInfo output</title>\n\t</head>\n\t<style type=\"text/css\">table.featureInfo, table.featureInfo td, table.featureInfo th { border: 1px solid #ddd; border-collapse: collapse; margin: 0; padding: 0; font-size: 90%; padding: .2em .1em; } table.featureInfo th { padding: .2em .2em; font-weight: bold; background: #eee; } table.featureInfo td { background: #fff; } table.featureInfo tr.odd td { background: #eee; } table.featureInfo caption { text-align: left; font-size: 100%; font-weight: bold; padding: .2em .2em; }</style>\n\t<body>\n\t\t<table class=\"featureInfo\">\n"
