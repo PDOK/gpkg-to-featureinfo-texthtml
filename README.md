@@ -44,8 +44,8 @@ Example with a local file:
 `gpkg-to-featureinfo-texthtml.exe -gpkg-path C:\files\afvalwater.gpkg`
 
 ## Usage with docker
-First you need to build the Docker image. This can be acchieved by running:
+First you need to build the Docker image. This can be acchieved by running:  
 `docker build -t pdok/gpkg-to-featureinfo-texthtml:0.1 .`
 
-You could use this container by running:
+You could use this container by running:  
 `docker run -v /tmp/output:/ouput -t pdok/gpkg-to-featureinfo-texthtml:0.1 gpkg-to-featureinfo-texthtml -gpkg-url https://domain.nl/geopackages/dataset/1/dataset.gpkg`
