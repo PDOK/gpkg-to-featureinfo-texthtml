@@ -41,3 +41,8 @@ Example with an URL:
 
 Example with a local file:  
 `gpkg-to-featureinfo-texthtml.exe -gpkg-path C:\files\afvalwater.gpkg`
+
+## Usage with docker
+First you need to build the Docker image. This can be acchieved by running:
+`docker build -t pdok/gpkg-to-featureinfo-texthtml:0.1 .`
+
